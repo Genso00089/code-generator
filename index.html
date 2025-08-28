@@ -1,0 +1,246 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>予約システム コード ジェネレーター</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 予約システム コード ジェネレーター</h1>
+        <p>必要な機能を選択して、コードを自動生成します</p>
+
+        <form id="codeForm">
+            <!-- Platform Selection -->
+            <div class="section">
+                <h2>1. プラットフォームを選択</h2>
+                <div class="radio-group">
+                    <label>
+                        <input type="radio" name="platform" value="formbridge" checked onchange="updateFeatures()">
+                        FormBridge (フォーム)
+                    </label>
+                    <label>
+                        <input type="radio" name="platform" value="kviewer" onchange="updateFeatures()">
+                        KViewer (カレンダー)
+                    </label>
+                    <label>
+                        <input type="radio" name="platform" value="kintone" onchange="updateFeatures()">
+                        Kintone (データ管理)
+                    </label>
+                </div>
+            </div>
+
+            <!-- API Version Selection -->
+            <div class="section">
+                <h2>2. APIバージョンを選択</h2>
+                <div class="radio-group">
+                    <label>
+                        <input type="radio" name="apiVersion" value="latest" checked>
+                        Latest (最新版)
+                    </label>
+                    <label>
+                        <input type="radio" name="apiVersion" value="legacy">
+                        Legacy (従来版)
+                    </label>
+                </div>
+            </div>
+
+            <!-- Features Selection -->
+            <div class="section">
+                <h2>3. 必要な機能を選択</h2>
+                
+                <!-- FormBridge Features -->
+                <div id="formbridgeFeatures" class="feature-group">
+                    <h3>📝 FormBridge専用機能</h3>
+                    <div class="checkbox-group">
+                        <label>
+                            <input type="checkbox" value="postalCode" data-platform="formbridge">
+                            郵便番号→住所変換
+                        </label>
+                        <label>
+                            <input type="checkbox" value="ageCalc" data-platform="formbridge">
+                            生年月日→年齢計算
+                        </label>
+                        <label>
+                            <input type="checkbox" value="dateValidation" data-platform="formbridge">
+                            日付バリデーション
+                        </label>
+                        <label>
+                            <input type="checkbox" value="fieldValidation" data-platform="formbridge">
+                            フィールドバリデーション
+                        </label>
+                        <label>
+                            <input type="checkbox" value="autoComplete" data-platform="formbridge">
+                            オートコンプリート
+                        </label>
+                        <label>
+                            <input type="checkbox" value="customFunction" data-platform="formbridge" onchange="toggleCustomRequestSection()">
+                            カスタム機能
+                        </label>
+                    </div>
+                    
+                    <!-- Custom Request Section for FormBridge -->
+                    <div class="custom-request-section" id="customRequestSection" style="display: none;">
+                        <h4>💡 カスタム機能リクエスト</h4>
+                        <p>上記にない機能が必要な場合は、以下に詳細をご記入ください：</p>
+                        
+                        <div class="custom-request-form">
+                            <div class="custom-field">
+                                <label for="customFunctionName">機能名:</label>
+                                <input type="text" id="customFunctionName" placeholder="例：電話番号フォーマット機能" maxlength="50">
+                            </div>
+                            
+                            <div class="custom-field">
+                                <label for="customRequirement">やりたいこと:</label>
+                                <textarea id="customRequirement" rows="3" placeholder="例：電話番号を入力時に自動的にハイフンを入れて整形したい" maxlength="200"></textarea>
+                            </div>
+                            
+                            <div class="custom-field">
+                                <label for="customImplementation">実装方法のアイデア（あれば）:</label>
+                                <textarea id="customImplementation" rows="3" placeholder="例：入力中にリアルタイムでフォーマットを適用、フォーカスアウト時に整形など" maxlength="200"></textarea>
+                            </div>
+                            
+                            <div class="custom-field">
+                                <label for="customFields">対象フィールド:</label>
+                                <input type="text" id="customFields" placeholder="例：電話番号, 携帯電話" maxlength="100">
+                            </div>
+                            
+                            <div class="custom-checkbox">
+                                <label>
+                                    <input type="checkbox" id="useCustomRequest" onchange="toggleCustomRequest()">
+                                    この機能を生成コードに含める
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- KViewer Features -->
+                <div id="kviewerFeatures" class="feature-group" style="display: none;">
+                    <h3>📅 KViewer専用機能</h3>
+                    <div class="checkbox-group">
+                        <label>
+                            <input type="checkbox" value="calendarCustom" data-platform="kviewer">
+                            カレンダーレイアウト調整
+                        </label>
+                        <label>
+                            <input type="checkbox" value="eventStyling" data-platform="kviewer">
+                            イベント表示スタイル
+                        </label>
+                        <label>
+                            <input type="checkbox" value="timeSlotCustom" data-platform="kviewer">
+                            時間枠カスタマイズ
+                        </label>
+                        <label>
+                            <input type="checkbox" value="holidayManagement" data-platform="kviewer">
+                            休日管理
+                        </label>
+                        <label>
+                            <input type="checkbox" value="bookingRestriction" data-platform="kviewer">
+                            予約制限設定
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Kintone Features -->
+                <div id="kintoneFeatures" class="feature-group" style="display: none;">
+                    <h3>🗃️ Kintone専用機能</h3>
+                    <div class="checkbox-group">
+                        <label>
+                            <input type="checkbox" value="recordUpdate" data-platform="kintone">
+                            レコード更新
+                        </label>
+                        <label>
+                            <input type="checkbox" value="customButton" data-platform="kintone">
+                            カスタムボタン追加
+                        </label>
+                        <label>
+                            <input type="checkbox" value="fieldCalculation" data-platform="kintone">
+                            フィールド計算
+                        </label>
+                        <label>
+                            <input type="checkbox" value="statusChange" data-platform="kintone">
+                            ステータス自動変更
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Common Features -->
+                <div id="commonFeatures" class="feature-group">
+                    <h3>🔧 共通機能</h3>
+                    <div class="checkbox-group">
+                        <label>
+                            <input type="checkbox" value="kintoneUpdate" data-platform="common">
+                            Kintoneデータ連携
+                        </label>
+                        <label>
+                            <input type="checkbox" value="emailNotification" data-platform="common">
+                            メール通知
+                        </label>
+                        <label>
+                            <input type="checkbox" value="logging" data-platform="common">
+                            ログ出力
+                        </label>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Field Configuration -->
+            <div class="section">
+                <h2>4. フィールド設定</h2>
+                <div class="field-config">
+                    <div class="field-group">
+                        <label for="postalField">郵便番号フィールド名:</label>
+                        <input type="text" id="postalField" placeholder="郵便番号" value="郵便番号">
+                    </div>
+                    <div class="field-group">
+                        <label for="addressField">住所フィールド名:</label>
+                        <input type="text" id="addressField" placeholder="住所" value="住所">
+                    </div>
+                    <div class="field-group">
+                        <label for="nameField">氏名フィールド名:</label>
+                        <input type="text" id="nameField" placeholder="氏名" value="氏名">
+                    </div>
+                    <div class="field-group">
+                        <label for="phoneField">電話番号フィールド名:</label>
+                        <input type="text" id="phoneField" placeholder="電話番号" value="電話番号">
+                    </div>
+                    <div class="field-group">
+                        <label for="dateField">日付フィールド名:</label>
+                        <input type="text" id="dateField" placeholder="予約日" value="予約日">
+                    </div>
+                    <div class="field-group">
+                        <label for="birthdateField">生年月日フィールド名:</label>
+                        <input type="text" id="birthdateField" placeholder="生年月日" value="生年月日">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Generate Button -->
+            <div class="section">
+                <button type="button" id="generateBtn" onclick="generateCode()">
+                    ✨ コードを生成
+                </button>
+            </div>
+        </form>
+
+        <!-- Output Section -->
+        <div class="section">
+            <div class="output-header">
+                <h2>5. 生成されたコード</h2>
+                <button type="button" id="copyBtn" onclick="copyToClipboard()" style="display: none;">
+                    📋 コピー
+                </button>
+            </div>
+            <textarea id="output" rows="25" cols="100" placeholder="ここに生成されたコードが表示されます..." readonly></textarea>
+        </div>
+
+        <div class="footer">
+            <p>💡 生成されたコードをコピーして、対応するプラットフォームに貼り付けてください</p>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>
