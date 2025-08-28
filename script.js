@@ -554,82 +554,99 @@ document.head.appendChild(style);`,
 })();`,
 
             timeBasedHiding: `
-// 時間制限による表示制御 (KViewer v2 API)
+// 時間制限による表示制御 - 15時以降に最初の5つのイベントを非表示 (KViewer API)
 (() => {
     'use strict';
     
-    // 時間制限設定
-    const timeRestrictions = {
-        hideAfterHour: 15,     // 15時以降に非表示
-        targetEventCount: 5,   // 対象イベント数
-        hideMessage: "受付終了" // 非表示時のメッセージ
+    // オリジナルの closeAfter15 関数をベースとした時間制限機能
+    const closeAfter15 = () => {
+        const cvevent = Array.from(document.querySelectorAll('.cv-event')).slice(0, 5);
+        const currentDate = new Date();
+        const currentHour = currentDate.getHours();
+        
+        if (currentHour >= 15) {
+            console.log("Current hour is 15 or later. Hiding first 5 events.");
+            cvevent.forEach((element) => {
+                console.log(element);
+                element.style.display = "none";
+            });
+        } else {
+            console.log(\`Current hour is \${currentHour}. Events remain visible.\`);
+        }
     };
     
-    // KViewer v2 API: ビュー表示時の時間制限適用
-    kviewer.events.on('view.show', function(context) {
-        console.log('KViewer v2: 時間制限による表示制御を開始');
+    // より確実な実行のため、複数のタイミングで実行
+    const executeTimeBasedHiding = () => {
+        // 即座に実行
+        closeAfter15();
         
-        const applyTimeBasedHiding = () => {
-            const currentDate = new Date();
-            const currentHour = currentDate.getHours();
-            
-            if (currentHour >= timeRestrictions.hideAfterHour) {
-                console.log(\`現在時刻は\${currentHour}時です。\${timeRestrictions.hideAfterHour}時以降のため、最初の\${timeRestrictions.targetEventCount}件のイベントを非表示にします。\`);
-                
-                // イベント要素を取得して非表示処理
-                const events = Array.from(document.querySelectorAll('.cv-event, .kv-event'))
-                    .slice(0, timeRestrictions.targetEventCount);
-                
-                events.forEach((element, index) => {
-                    console.log(\`イベント\${index + 1}を非表示: \`, element);
-                    element.style.display = "none";
-                    
-                    // 非表示メッセージを追加
-                    if (!element.querySelector('.time-restriction-message')) {
-                        const message = document.createElement('div');
-                        message.className = 'time-restriction-message';
-                        message.textContent = timeRestrictions.hideMessage;
-                        message.style.cssText = \`
-                            position: absolute;
-                            top: 50%;
-                            left: 50%;
-                            transform: translate(-50%, -50%);
-                            background: #ff5722;
-                            color: white;
-                            padding: 5px 10px;
-                            border-radius: 4px;
-                            font-size: 12px;
-                            font-weight: bold;
-                            z-index: 1000;
-                        \`;
-                        
-                        // 親要素の位置を設定
-                        element.style.position = 'relative';
-                        element.appendChild(message);
-                        
-                        // 半透明にする
-                        element.style.opacity = '0.5';
-                    }
-                });
-                
-                console.log(\`\${events.length}件のイベントを非表示にしました\`);
-            } else {
-                console.log(\`現在時刻は\${currentHour}時です。\${timeRestrictions.hideAfterHour}時前のため、通常表示を継続します。\`);
-            }
-        };
+        // 少し遅らせて再実行（DOM更新対応）
+        setTimeout(closeAfter15, 500);
+        setTimeout(closeAfter15, 1000);
+        setTimeout(closeAfter15, 2000);
+    };
+    
+    // KViewer v2 API使用時
+    if (typeof kviewer !== 'undefined' && kviewer.events) {
+        kviewer.events.on('view.show', function(context) {
+            console.log('KViewer v2: 時間制限チェックを開始');
+            executeTimeBasedHiding();
+        });
         
-        // DOM準備完了後に実行
-        setTimeout(applyTimeBasedHiding, 200);
+        kviewer.events.on('records.show', function(context) {
+            console.log('KViewer v2: レコード表示時の時間制限チェック');
+            executeTimeBasedHiding();
+        });
+    }
+    
+    // KViewer v1 API使用時
+    if (typeof kv !== 'undefined' && kv.events) {
+        kv.events.records.mounted = kv.events.records.mounted || [];
+        kv.events.records.mounted.push(function(state) {
+            console.log('KViewer v1: 時間制限チェックを開始');
+            executeTimeBasedHiding();
+            return state;
+        });
+    }
+    
+    // DOM読み込み完了時にも実行（フォールバック）
+    document.addEventListener('DOMContentLoaded', function() {
+        console.log('DOM読み込み完了: 時間制限チェックを開始');
+        executeTimeBasedHiding();
     });
     
-    // レコード表示時にも適用
-    kviewer.events.on('records.show', function(context) {
-        setTimeout(() => {
-            const currentHour = new Date().getHours();
-            if (currentHour >= timeRestrictions.hideAfterHour) {
-                console.log('レコード表示時の時間制限チェック完了');
+    // ページ読み込み完了時にも実行
+    window.addEventListener('load', function() {
+        console.log('ページ読み込み完了: 時間制限チェックを開始');
+        executeTimeBasedHiding();
+    });
+    
+    // MutationObserverでDOM変更を監視し、新しいイベントが追加された時に実行
+    const observer = new MutationObserver(function(mutations) {
+        let shouldCheck = false;
+        mutations.forEach(function(mutation) {
+            if (mutation.type === 'childList') {
+                const addedNodes = Array.from(mutation.addedNodes);
+                const hasEventElement = addedNodes.some(node => 
+                    node.nodeType === Node.ELEMENT_NODE && 
+                    (node.classList.contains('cv-event') || node.querySelector('.cv-event'))
+                );
+                if (hasEventElement) {
+                    shouldCheck = true;
+                }
             }
-        }, 100);
+        });
+        
+        if (shouldCheck) {
+            console.log('DOM変更検出: 時間制限チェックを実行');
+            setTimeout(closeAfter15, 100);
+        }
+    });
+    
+    // 監視開始
+    observer.observe(document.body, {
+        childList: true,
+        subtree: true
     });
 })();`,
 
