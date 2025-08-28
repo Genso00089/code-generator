@@ -553,6 +553,86 @@ document.head.appendChild(style);`,
     });
 })();`,
 
+            timeBasedHiding: `
+// 時間制限による表示制御 (KViewer v2 API)
+(() => {
+    'use strict';
+    
+    // 時間制限設定
+    const timeRestrictions = {
+        hideAfterHour: 15,     // 15時以降に非表示
+        targetEventCount: 5,   // 対象イベント数
+        hideMessage: "受付終了" // 非表示時のメッセージ
+    };
+    
+    // KViewer v2 API: ビュー表示時の時間制限適用
+    kviewer.events.on('view.show', function(context) {
+        console.log('KViewer v2: 時間制限による表示制御を開始');
+        
+        const applyTimeBasedHiding = () => {
+            const currentDate = new Date();
+            const currentHour = currentDate.getHours();
+            
+            if (currentHour >= timeRestrictions.hideAfterHour) {
+                console.log(\`現在時刻は\${currentHour}時です。\${timeRestrictions.hideAfterHour}時以降のため、最初の\${timeRestrictions.targetEventCount}件のイベントを非表示にします。\`);
+                
+                // イベント要素を取得して非表示処理
+                const events = Array.from(document.querySelectorAll('.cv-event, .kv-event'))
+                    .slice(0, timeRestrictions.targetEventCount);
+                
+                events.forEach((element, index) => {
+                    console.log(\`イベント\${index + 1}を非表示: \`, element);
+                    element.style.display = "none";
+                    
+                    // 非表示メッセージを追加
+                    if (!element.querySelector('.time-restriction-message')) {
+                        const message = document.createElement('div');
+                        message.className = 'time-restriction-message';
+                        message.textContent = timeRestrictions.hideMessage;
+                        message.style.cssText = \`
+                            position: absolute;
+                            top: 50%;
+                            left: 50%;
+                            transform: translate(-50%, -50%);
+                            background: #ff5722;
+                            color: white;
+                            padding: 5px 10px;
+                            border-radius: 4px;
+                            font-size: 12px;
+                            font-weight: bold;
+                            z-index: 1000;
+                        \`;
+                        
+                        // 親要素の位置を設定
+                        element.style.position = 'relative';
+                        element.appendChild(message);
+                        
+                        // 半透明にする
+                        element.style.opacity = '0.5';
+                    }
+                });
+                
+                console.log(\`\${events.length}件のイベントを非表示にしました\`);
+            } else {
+                console.log(\`現在時刻は\${currentHour}時です。\${timeRestrictions.hideAfterHour}時前のため、通常表示を継続します。\`);
+            }
+        };
+        
+        // DOM準備完了後に実行
+        setTimeout(applyTimeBasedHiding, 200);
+    });
+    
+    // レコード表示時にも適用
+    kviewer.events.on('records.show', function(context) {
+        setTimeout(() => {
+            const currentHour = new Date().getHours();
+            if (currentHour >= timeRestrictions.hideAfterHour) {
+                console.log('レコード表示時の時間制限チェック完了');
+            }
+        }, 100);
+    });
+})();`,
+
             bookingRestriction: `
 // 予約制限設定 (KViewer v2 API)
 (() => {
